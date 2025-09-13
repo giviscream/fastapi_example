@@ -1,0 +1,5 @@
+fastapi[standard]
+ruff
+mypy
+pydantic
+sqlalchemy==2
