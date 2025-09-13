@@ -1,0 +1,28 @@
+services:
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    command: "postgres -c max_connections=20 -c shared_buffers=200MB"
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/init_db:/docker-entrypoint-initdb.d
+    networks:
+      - dev
+    healthcheck:
+      test: "pg_isready -U postgres -d postgres"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+volumes:
+  postgres-data:
+
+networks:
+  dev:
