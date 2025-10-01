@@ -1,11 +1,11 @@
+version: '3.8'
 services:
-
   postgres:
     image: postgres:latest
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_DB: todolist_db
     command: "postgres -c max_connections=20 -c shared_buffers=200MB"
     ports:
       - 5432:5432
@@ -19,7 +19,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
 
 volumes:
   postgres-data:
