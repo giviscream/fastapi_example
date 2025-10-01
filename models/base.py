@@ -1,5 +1,4 @@
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import DeclarativeBase
+from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
 from uuid import UUID
 from datetime import datetime, timezone
 
