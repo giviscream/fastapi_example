@@ -12,5 +12,10 @@ class Settings(BaseSettings):
     )
     DATABASE_URL: PostgresDsn
 
+    @property
+    def async_database_url(self) -> str:
+        """Возвращает строку подключения для асинхронной работы"""
+        return str(self.DATABASE_URL)
+
 
 settings = Settings()
