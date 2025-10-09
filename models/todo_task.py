@@ -19,5 +19,6 @@ class ToDoTask(Base):
     responsible: Mapped["User"] = relationship(
         argument="User",
         foreign_keys=[responsible_id],
+        back_populates="tasks",
         lazy="select"
     )
