@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   db:
-    image: postgres:16
+    image: postgres:latest
     container_name: todolist_db
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
