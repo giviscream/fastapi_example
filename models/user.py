@@ -15,7 +15,7 @@ class User(Base):
     disabled: Mapped[bool] = mapped_column(Boolean, server_default="0")
     password_hash: Mapped[str] = mapped_column(String(1000))
 
-    tasks: Mapped[list["ToDoTask"]] = relationship(
+    tasks: Mapped[list["ToDoTask"] | None] = relationship(
         argument="ToDoTask",
         back_populates="responsible",
         cascade="all, delete-orphan",
