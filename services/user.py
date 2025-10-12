@@ -5,11 +5,14 @@ from schemas.user.response import UserResponse
 from functools import lru_cache
 from fastapi import Depends
 
+from services.base import transactional #todo: Как лучше?
+
 
 class UserService:
     def __init__(self, user_repository: UsersRepository) -> None:
         self.user_repository = user_repository
 
+    @transactional("user_repository")
     async def create_user(self, user_create: CreateUser) -> UserResponse:
         new_user: User = await self.user_repository.create(**user_create.model_dump())
         
