@@ -24,7 +24,7 @@ class BaseRepository(Generic[ModelType]):
         result = await self.session.execute(
             select(self.model).offset(skip).limit(limit)
         )
-        return result.all()
+        return list(result.scalars().all())
 
     async def create(self, **instance_data) -> ModelType:
         instance = self.model(**instance_data)

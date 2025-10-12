@@ -4,7 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from todo_task import ToDoTask
+    from models.todo_task import ToDoTask
 
 
 class User(Base):
