@@ -1,6 +1,4 @@
-from http import HTTPStatus
-
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from schemas.user.request import CreateUser
 from schemas.user.response import UserResponse
 from services.user import UserService, get_user_service
