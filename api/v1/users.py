@@ -13,7 +13,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/users/token")
     path="/",
     response_model=UserResponse,
 )
-async def create_user(
+async def register(
     user_create: CreateUser, user_service: UserService = Depends(get_user_service)
 ) -> UserResponse:
     """
