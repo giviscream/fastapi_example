@@ -5,5 +5,5 @@ class CreateUser(BaseModel):
     email: str = Field(...)
     full_name: str | None = Field(...)
     disabled: bool = Field(...)
-    password_hash: str = Field(...)
+    password: str = Field(...)
     

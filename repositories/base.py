@@ -28,7 +28,7 @@ class BaseRepository(Generic[ModelType]):
 
     async def create(self, **instance_data) -> ModelType:
         instance = self.model(**instance_data)
-        self.session.add(instance)
+        #self.session.add(instance)
         await self.session.flush()
         return instance
 

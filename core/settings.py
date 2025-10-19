@@ -10,6 +10,11 @@ class Settings(BaseSettings):
         extra="ignore",
         frozen=True,
     )
+
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+
     DATABASE_URL: PostgresDsn
 
     @property

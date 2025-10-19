@@ -8,7 +8,7 @@ from repositories.todo_tasks_repository import (
     ToDoTaskRepository,
     get_todo_tasks_repository,
 )
-from repositories.users_repository import UsersRepository, get_users_repository
+from repositories.users_repository import UsersRepository
 from schemas.todo_task.request import CreateToDoTask
 from schemas.todo_task.response import ToDoTaskResponse
 from services.base import transactional
@@ -18,19 +18,17 @@ class ToDoTaskService:
     def __init__(
         self,
         todo_tasks_repository: ToDoTaskRepository,
-        users_repository: UsersRepository,
     ):
         self.todo_tasks_repository = todo_tasks_repository
-        self.users_repository = users_repository
 
     @transactional(repository_attr="todo_tasks_repository")
     async def create_todo_task(
         self, responsible_id: int, todo_task_create: CreateToDoTask
     ) -> ToDoTaskResponse:
         # Проверка существования пользователя
-        user: User = await self.users_repository.get_by_id(responsible_id)
-        if not user:
-            raise ValueError("User not found")
+        # user: User = await self.users_repository.get_by_id(responsible_id)
+        # if not user:
+        #     raise ValueError("User not found")
 
         new_todo_task: ToDoTask = await self.todo_tasks_repository.create(
             title=todo_task_create.title,
@@ -55,12 +53,9 @@ class ToDoTaskService:
         return [ToDoTaskResponse.model_validate(todo_task) for todo_task in todo_tasks]
 
 
-@lru_cache
 def get_todo_task_service(
     todo_tasks_repository=Depends(get_todo_tasks_repository),
-    users_repository=Depends(get_users_repository),
 ):
     return ToDoTaskService(
         todo_tasks_repository=todo_tasks_repository,
-        users_repository=users_repository,
     )
