@@ -4,12 +4,15 @@ from contextlib import asynccontextmanager
 import uvicorn
 #from database.database import init_db
 from api.v1 import users, todo_tasks
+from core.logger import get_logger
 
+logger = get_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    #init_db()
+    logger.info("My fancy app is starting...")
     yield
+    logger.info("My fancy app is done...")
 
 
 app = FastAPI(lifespan=lifespan)

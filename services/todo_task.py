@@ -1,6 +1,8 @@
+from logging import Logger
 from typing import List
 
 from fastapi import Depends
+from core.logger import get_logger
 from models.todo_task import ToDoTask
 from repositories.todo_tasks_repository import (
     ToDoTaskRepository,
@@ -14,9 +16,11 @@ from services.base import transactional
 class ToDoTaskService:
     def __init__(
         self,
+        logger: Logger,
         todo_tasks_repository: ToDoTaskRepository,
     ):
         self.todo_tasks_repository = todo_tasks_repository
+        self.logger = logger
 
     @transactional(repository_attr="todo_tasks_repository")
     async def create_todo_task(
@@ -42,12 +46,16 @@ class ToDoTaskService:
         todo_tasks: List[ToDoTask] = await self.todo_tasks_repository.list(
             skip=skip, limit=limit
         )
-        return [ToDoTaskResponse.model_validate(obj=todo_task) for todo_task in todo_tasks]
+        return [
+            ToDoTaskResponse.model_validate(obj=todo_task) for todo_task in todo_tasks
+        ]
 
 
 def get_todo_task_service(
     todo_tasks_repository=Depends(dependency=get_todo_tasks_repository),
+    logger=Depends(get_logger),
 ) -> ToDoTaskService:
     return ToDoTaskService(
+        logger=logger,
         todo_tasks_repository=todo_tasks_repository,
     )

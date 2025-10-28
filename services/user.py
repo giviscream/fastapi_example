@@ -1,3 +1,5 @@
+from logging import Logger
+from core.logger import get_logger
 from repositories.users_repository import UsersRepository, get_users_repository
 from schemas.token.response import Token
 from schemas.user.request import CreateUser
@@ -11,10 +13,14 @@ from services.base import transactional  # todo: Как лучше?
 
 class UserService:
     def __init__(
-        self, user_repository: UsersRepository, security_service: SecurityService
+        self,
+        logger: Logger,
+        user_repository: UsersRepository,
+        security_service: SecurityService,
     ) -> None:
         self.user_repository = user_repository
         self.security_service = security_service
+        self.logger = logger
 
     @transactional("user_repository")
     async def create_user(self, user_create: CreateUser) -> UserResponse:
@@ -65,8 +71,10 @@ class UserService:
 def get_user_service(
     user_repository=Depends(get_users_repository),
     security_service=Depends(get_security_service),
+    logger=Depends(get_logger),
 ):
     return UserService(
+        logger=logger,
         user_repository=user_repository,
         security_service=security_service,
     )
