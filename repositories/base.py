@@ -1,11 +1,10 @@
 from typing import Generic, Optional, TypeVar
 
-from sqlalchemy import delete, update
+from sqlalchemy import delete, update, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import DeclarativeBase
 
-# T = TypeVar('T')
 ModelType = TypeVar("ModelType", bound=DeclarativeBase)
 
 
@@ -27,10 +26,10 @@ class BaseRepository(Generic[ModelType]):
         return list(result.scalars().all())
 
     async def create(self, **instance_data) -> ModelType:
-        instance = self.model(**instance_data)
-        #self.session.add(instance)
-        await self.session.flush()
-        return instance
+        result = await self.session.execute(
+            insert(self.model).values(**instance_data).returning(self.model)
+        )
+        return result.scalar_one()
 
     async def update(self, id: int, **instance_data) -> ModelType:
         await self.session.execute(
