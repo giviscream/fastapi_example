@@ -49,11 +49,11 @@ class SecurityService:
                 minutes=self.access_token_expire_minutes
             )
         
-        to_encode = data.copy()
-        to_encode.update({"exp": expire})
+        claims = data.copy()
+        claims.update({"exp": expire, "username": data["username"]})
 
         encoded_jwt = jwt.encode(
-            claims=to_encode,
+            claims=claims,
             key=self.secret_key,
             algorithm=self.sign_algorithm,
         )
