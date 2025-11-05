@@ -2,11 +2,11 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 import uvicorn
-#from database.database import init_db
-from api.v1 import users, todo_tasks
+from api.v1 import todo_tasks, auth
 from core.logger import get_logger
 
 logger = get_logger()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -18,19 +18,26 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(
-    router=users.router,
-    prefix="/api/v1/users",
-    tags=["Users"],
+    router=auth.router,
+    prefix="/api/v1/auth",
+    tags=["Auth"],
 )
+# app.include_router(
+#     router=users.router,
+#     prefix="/api/v1/users",
+#     tags=["Users"],
+# )
 app.include_router(
     router=todo_tasks.router,
     prefix="/api/v1/todo_tasks",
     tags=["ToDoTasks"],
 )
 
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
 
-if __name__ == '__main__':
-    uvicorn.run('main:app', reload=True)
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", reload=True)
