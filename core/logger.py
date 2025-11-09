@@ -1,8 +1,5 @@
-from functools import lru_cache
 import logging
 from sys import stdout
-
-from core.settings import settings
 
 LOGS_FMT = "[%(asctime)s.%(msecs)05d][%(levelname)s][%(name)s] %(message)s"
 LOGS_DATE_FMT = "%Y-%m-%dT%H:%M:%S"
@@ -26,13 +23,3 @@ def setup_logger(
 
     logger.addHandler(hdlr=console_handler)
     return logger
-
-
-@lru_cache
-def get_logger() -> logging.Logger:
-    return setup_logger(
-        logs_level=settings.LOGS_LEVEL,
-        logs_fmt=LOGS_FMT,
-        logs_date_fmt=LOGS_DATE_FMT,
-        logger_name="fastapi_app",
-    )

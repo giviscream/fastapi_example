@@ -1,13 +1,10 @@
 from logging import Logger
-from fastapi import Depends
-from core.logger import get_logger
 from schemas.user.request import CreateUser
 from schemas.user.response import UserResponse
 from services.base import transactional
-from services.security import SecurityService, get_security_service
+from services.security import SecurityService
 
-# from core.exceptions import UnauthorizedException, AlreadyExistsException
-from repositories.users_repository import UsersRepository, get_users_repository
+from repositories.users_repository import UsersRepository
 from schemas.token.response import Token
 from models.user import User
 
@@ -88,15 +85,3 @@ class AuthService:
             raise "Пользователь неактивен"
 
         return UserResponse.model_validate(user)
-
-
-def get_auth_service(
-    users_repository=Depends(get_users_repository),
-    security_service=Depends(get_security_service),
-    logger=Depends(get_logger),
-):
-    return AuthService(
-        logger=logger,
-        users_repository=users_repository,
-        security_service=security_service,
-    )

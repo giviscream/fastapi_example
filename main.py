@@ -3,9 +3,10 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from api.v1 import todo_tasks, auth
-from core.logger import get_logger
+from core.containers import Container
 
-logger = get_logger()
+container = Container()
+logger = container.logger()
 
 
 @asynccontextmanager
@@ -15,23 +16,30 @@ async def lifespan(app: FastAPI):
     logger.info("My fancy app is done...")
 
 
-app = FastAPI(lifespan=lifespan)
+def create_app(lifespan=lifespan) -> FastAPI:
+    container = Container()
 
-app.include_router(
-    router=auth.router,
-    prefix="/api/v1/auth",
-    tags=["Auth"],
-)
-# app.include_router(
-#     router=users.router,
-#     prefix="/api/v1/users",
-#     tags=["Users"],
-# )
-app.include_router(
-    router=todo_tasks.router,
-    prefix="/api/v1/todo_tasks",
-    tags=["ToDoTasks"],
-)
+    # db = container.db()
+    # db.create_database()
+
+    app = FastAPI(lifespan=lifespan)
+    app.container = container
+
+    app.include_router(
+        router=auth.router,
+        prefix="/api/v1/auth",
+        tags=["Auth"],
+    )
+    app.include_router(
+        router=todo_tasks.router,
+        prefix="/api/v1/todo_tasks",
+        tags=["ToDoTasks"],
+    )
+
+    return app
+
+
+app = create_app(lifespan=lifespan)
 
 
 @app.get("/health")

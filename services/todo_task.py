@@ -1,13 +1,8 @@
 from logging import Logger
 from typing import List
 
-from fastapi import Depends
-from core.logger import get_logger
 from models.todo_task import ToDoTask
-from repositories.todo_tasks_repository import (
-    ToDoTaskRepository,
-    get_todo_tasks_repository,
-)
+from repositories.todo_tasks_repository import ToDoTaskRepository
 from schemas.todo_task.request import CreateToDoTask
 from schemas.todo_task.response import ToDoTaskResponse
 from services.base import transactional
@@ -49,13 +44,3 @@ class ToDoTaskService:
         return [
             ToDoTaskResponse.model_validate(obj=todo_task) for todo_task in todo_tasks
         ]
-
-
-def get_todo_task_service(
-    todo_tasks_repository=Depends(dependency=get_todo_tasks_repository),
-    logger=Depends(get_logger),
-) -> ToDoTaskService:
-    return ToDoTaskService(
-        logger=logger,
-        todo_tasks_repository=todo_tasks_repository,
-    )

@@ -1,44 +1,51 @@
-from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
-
+from core.containers import Container
+from core.dependencies import get_current_user
 from schemas.todo_task.request import CreateToDoTask
 from schemas.todo_task.response import ToDoTaskResponse
-from services.todo_task import ToDoTaskService, get_todo_task_service
+from schemas.user.response import UserResponse
+from services.todo_task import ToDoTaskService
+from dependency_injector.wiring import Provide, inject
 
 router = APIRouter()
 
 
 @router.post(
-    "/",
+    path="/",
     response_model=ToDoTaskResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@inject
 async def create_todo_task(
-    user_id: UUID,
     todo_task_create: CreateToDoTask,
-    todo_task_service: ToDoTaskService = Depends(get_todo_task_service),
+    todo_task_service: ToDoTaskService = Depends(Provide[Container.todo_task_service]),
+    current_user: UserResponse = Depends(get_current_user),
 ) -> ToDoTaskResponse:
     try:
-        return await todo_task_service.create_todo_task(responsible_id=user_id, todo_task_create=todo_task_create)
+        return await todo_task_service.create_todo_task(
+            responsible_id=current_user.id, todo_task_create=todo_task_create
+        )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/", response_model=List[ToDoTaskResponse])
+@router.get(path="/", response_model=List[ToDoTaskResponse])
+@inject
 async def get_tasks(
     skip: int = 0,
     limit: int = 100,
-    todo_task_service: ToDoTaskService = Depends(get_todo_task_service),
+    todo_task_service: ToDoTaskService = Depends(dependency=Provide[Container.todo_task_service]),
 ) -> List[ToDoTaskResponse]:
     return await todo_task_service.get_all_todo_tasks(skip=skip, limit=limit)
 
 
-@router.get("/{todo_task_id}", response_model=ToDoTaskResponse)
+@router.get(path="/{todo_task_id}", response_model=ToDoTaskResponse)
+@inject
 async def get_todo_task(
     todo_task_id: int,
-    todo_task_service: ToDoTaskService = Depends(get_todo_task_service),
+    todo_task_service: ToDoTaskService = Depends(dependency=Provide[Container.todo_task_service]),
 ) -> ToDoTaskResponse:
     todo_task: ToDoTaskResponse = await todo_task_service.get_todo_task(todo_task_id)
     if not todo_task:

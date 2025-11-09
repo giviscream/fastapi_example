@@ -2,8 +2,6 @@ from datetime import datetime, timedelta, timezone
 import bcrypt
 from jose import JWTError, jwt
 
-from core.settings import settings
-
 
 class SecurityService:
     def __init__(
@@ -48,7 +46,7 @@ class SecurityService:
             expire = datetime.now(tz=timezone.utc) + timedelta(
                 minutes=self.access_token_expire_minutes
             )
-        
+
         claims = data.copy()
         claims.update({"exp": expire, "username": data["username"]})
 
@@ -69,11 +67,3 @@ class SecurityService:
             return payload
         except JWTError:
             return None
-
-
-def get_security_service() -> SecurityService:
-    return SecurityService(
-        access_token_expire_minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
-        sign_algorithm=settings.ALGORITHM,
-        secret_key=settings.SECRET_KEY,
-    )

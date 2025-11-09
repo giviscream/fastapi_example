@@ -1,38 +1,33 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
+from core.containers import Container
+from core.dependencies import get_current_user
 from schemas.user.request import CreateUser
 from schemas.user.response import UserResponse
 from schemas.token.response import Token
-from services.auth import AuthService, get_auth_service
+from services.auth import AuthService
+from dependency_injector.wiring import Provide, inject
 
 router = APIRouter()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 
-@router.get(path="/me")
-async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    auth_service: AuthService = Depends(get_auth_service),
+@router.get("/users/me")
+async def get_current_user_info(
+    current_user: UserResponse = Depends(dependency=get_current_user),
 ) -> UserResponse:
-    user: UserResponse = await auth_service.get_current_user(token)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return user
+    return current_user
 
 
 @router.post(
     path="/",
     response_model=UserResponse,
 )
+@inject
 async def register(
     user_create: CreateUser,
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: Annotated[AuthService, Depends(Provide[Container.auth_service])],
 ) -> UserResponse:
     """
     Регистрация нового пользователя (доступно без авторизации)
@@ -41,16 +36,17 @@ async def register(
 
 
 @router.post("/token", response_model=Token)
+@inject
 async def login(
+    auth_service: Annotated[AuthService, Depends(Provide[Container.auth_service])],
     form_data: OAuth2PasswordRequestForm = Depends(),
-    auth_service: AuthService = Depends(get_auth_service),
 ):
     """
     OAuth2 совместимый endpoint для получения токена.
     Этот endpoint используется кнопкой "Authorize" в Swagger UI.
 
     Используется стандартная форма OAuth2:
-    - **username**: Email или username пользователя
+    - **username**: username пользователя
     - **password**: Пароль пользователя
 
     Возвращает JWT access token
