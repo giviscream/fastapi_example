@@ -1,8 +1,9 @@
-from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from uuid import UUID
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from core.containers import Container
-from core.dependencies import get_current_user
+
+from core.dependencies import get_current_user_id
 from schemas.user.request import CreateUser
 from schemas.user.response import UserResponse
 from schemas.token.response import Token
@@ -11,13 +12,21 @@ from dependency_injector.wiring import Provide, inject
 
 router = APIRouter()
 
+oauth_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 
-@router.get("/users/me")
+@router.get(
+    path="/users/me",
+    response_model=UserResponse,
+    dependencies=[Depends(oauth_scheme)]
+)
+@inject
 async def get_current_user_info(
-    current_user: UserResponse = Depends(dependency=get_current_user),
+    current_user_id: UUID = Depends(get_current_user_id),
+    auth_service: AuthService = Depends(Provide[Container.auth_service]),
 ) -> UserResponse:
-    return current_user
+    #return await auth_service.get_user_by_id(user_id=request.state.user_id)
+    return await auth_service.get_user_by_id(user_id=current_user_id)
 
 
 @router.post(
@@ -27,7 +36,7 @@ async def get_current_user_info(
 @inject
 async def register(
     user_create: CreateUser,
-    auth_service: Annotated[AuthService, Depends(Provide[Container.auth_service])],
+    auth_service: AuthService = Depends(Provide[Container.auth_service]),
 ) -> UserResponse:
     """
     Регистрация нового пользователя (доступно без авторизации)
@@ -38,7 +47,7 @@ async def register(
 @router.post("/token", response_model=Token)
 @inject
 async def login(
-    auth_service: Annotated[AuthService, Depends(Provide[Container.auth_service])],
+    auth_service: AuthService = Depends(Provide[Container.auth_service]),
     form_data: OAuth2PasswordRequestForm = Depends(),
 ):
     """

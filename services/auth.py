@@ -1,4 +1,5 @@
 from logging import Logger
+from uuid import UUID
 from schemas.user.request import CreateUser
 from schemas.user.response import UserResponse
 from services.base import transactional
@@ -60,9 +61,7 @@ class AuthService:
 
         access_token = self.security_service.create_access_token(
             data={
-                "sub": str(user.id),
-                "email": user.email,
-                "username": user.username,
+                "user_id": str(user.id),
             },
         )
 
@@ -71,17 +70,23 @@ class AuthService:
     async def get_current_user(self, token: str) -> UserResponse:
         """Получение текущего пользователя из токена"""
         payload: dict = self.security_service.decode_access_token(token=token)
-        username = payload.get("username")
-        if not username:
-            raise "Cannot verify username"  # todo: сделать выделенные исключения
+        user_id: UUID = payload.get("user_id")
+        if not user_id:
+            raise "Cannot verify user"  # todo: сделать выделенные исключения
 
-        user: User | None = await self.users_repository.get_by_username(
-            username=username
-        )
+        user: User | None = await self.users_repository.get_by_id(id=user_id)
         if user is None:
-            raise "Пользователь не найден"
+            raise "User is not found"
 
         if user.disabled:
-            raise "Пользователь неактивен"
+            raise "User is disabled"
 
+        return UserResponse.model_validate(user)
+
+    async def get_current_user_id(self, token: str) -> UUID:
+        result: UserResponse = await self.get_current_user(token=token)
+        return result.id if result else None
+
+    async def get_user_by_id(self, user_id: UUID) -> UserResponse:
+        user: User = await self.users_repository.get_by_id(id=user_id)
         return UserResponse.model_validate(user)

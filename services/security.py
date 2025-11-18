@@ -48,7 +48,7 @@ class SecurityService:
             )
 
         claims = data.copy()
-        claims.update({"exp": expire, "username": data["username"]})
+        claims.update({"exp": expire})
 
         encoded_jwt = jwt.encode(
             claims=claims,

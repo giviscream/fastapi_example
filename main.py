@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from api.v1 import todo_tasks, auth
 from core.containers import Container
+from middleware.auth_middleware import AuthMiddleware
 
 container = Container()
 logger = container.logger()
@@ -24,6 +25,8 @@ def create_app(lifespan=lifespan) -> FastAPI:
 
     app = FastAPI(lifespan=lifespan)
     app.container = container
+
+    app.add_middleware(AuthMiddleware)
 
     app.include_router(
         router=auth.router,
