@@ -1,9 +1,11 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from core.containers import Container
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.dependencies import get_current_user_id
+from core.dependencies import get_current_user_id, get_db_session
+from database.ext import managed_db_session
 from schemas.user.request import CreateUser
 from schemas.user.response import UserResponse
 from schemas.token.response import Token
@@ -12,21 +14,19 @@ from dependency_injector.wiring import Provide, inject
 
 router = APIRouter()
 
-oauth_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
-
 
 @router.get(
     path="/users/me",
     response_model=UserResponse,
-    dependencies=[Depends(oauth_scheme)]
 )
 @inject
+@managed_db_session()
 async def get_current_user_info(
-    current_user_id: UUID = Depends(get_current_user_id),
     auth_service: AuthService = Depends(Provide[Container.auth_service]),
+    current_user_id: UUID = Depends(get_current_user_id),
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> UserResponse:
-    #return await auth_service.get_user_by_id(user_id=request.state.user_id)
-    return await auth_service.get_user_by_id(user_id=current_user_id)
+    return await auth_service.with_session(session=db_session).get_user_by_id(user_id=current_user_id)
 
 
 @router.post(
@@ -46,9 +46,11 @@ async def register(
 
 @router.post("/token", response_model=Token)
 @inject
+@managed_db_session()
 async def login(
     auth_service: AuthService = Depends(Provide[Container.auth_service]),
     form_data: OAuth2PasswordRequestForm = Depends(),
+    db_session: AsyncSession = Depends(get_db_session),
 ):
     """
     OAuth2 совместимый endpoint для получения токена.
@@ -61,7 +63,7 @@ async def login(
     Возвращает JWT access token
     """
     try:
-        token = await auth_service.login(
+        token = await auth_service.with_session(session=db_session).login(
             username=form_data.username, password=form_data.password
         )
         return token

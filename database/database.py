@@ -13,7 +13,7 @@ class Database:
             echo=echo,
             future=True,
         )
-        self._session_factory = async_sessionmaker(
+        self.session_factory = async_sessionmaker(
             bind=self._engine,
             class_=AsyncSession,
             expire_on_commit=False,
@@ -26,8 +26,8 @@ class Database:
             await conn.run_sync(Base.metadata.create_all)
 
     @asynccontextmanager
-    async def get_db_session(self) -> AsyncGenerator[AsyncSession, None]:
-        session: AsyncSession = self._session_factory()
+    async def del_get_db_session(self) -> AsyncGenerator[AsyncSession, None]:
+        session: AsyncSession = self.session_factory()
         try:
             yield session
         except Exception:
@@ -35,3 +35,5 @@ class Database:
             raise
         finally:
             await session.close()
+
+    

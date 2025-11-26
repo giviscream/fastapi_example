@@ -8,14 +8,21 @@ from services.auth import AuthService
 
 class AuthMiddleware(BaseHTTPMiddleware):
     """Middleware для проверки токенов"""
-    
+
     # Публичные эндпоинты, которые не требуют авторизации
-    PUBLIC_PATHS = ["/docs", "/redoc", "/openapi.json", "/api/v1/auth/login", "/api/v1/auth/token", "/api/v1/auth/register"]
+    PUBLIC_PATHS = [
+        "/docs",
+        "/redoc",
+        "/openapi.json",
+        "/api/v1/auth/login",
+        "/api/v1/auth/token",
+        "/api/v1/auth/register",
+    ]
 
     @inject
     async def dispatch(
-        self, 
-        request: Request, 
+        self,
+        request: Request,
         call_next,
         auth_service: AuthService = Depends(Provide[Container.auth_service]),
     ):
@@ -47,8 +54,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
             )
 
         # Валидация токена
-        user_id: UUID = await auth_service.get_current_user_id(token=token)
-        
+        user_id: UUID = await auth_service.with_session(
+            session=request.state.db_session
+        ).get_current_user_id(token=token)
+
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -58,6 +67,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         # Добавляем данные пользователя в state запроса
         request.state.user_id = user_id
-        
+
         response = await call_next(request)
         return response

@@ -1,5 +1,4 @@
 from dependency_injector import containers, providers
-from core.dependencies import get_current_user_id
 from core.logger import setup_logger, LOGS_FMT, LOGS_DATE_FMT
 from core.settings import settings
 from database.database import Database
@@ -16,6 +15,8 @@ class Container(containers.DeclarativeContainer):
             "api.v1.auth",
             "api.v1.todo_tasks",
             "middleware.auth_middleware",
+            "middleware.db_session_middleware",
+            "database.ext"
         ]
     )
 
@@ -33,19 +34,12 @@ class Container(containers.DeclarativeContainer):
         echo=True,
     )  # todo: пробрасывать его вместо сессий
 
-    session = providers.Resource(
-        lambda factory: factory(),
-        db.provided.get_db_session,  # todo: Убрать сессию
-    )
-
     users_repository = providers.Factory(
         provides=UsersRepository,
-        session=session,
     )
 
     todo_tasks_repository = providers.Factory(
         provides=ToDoTaskRepository,
-        session=session,
     )
 
     security_service = providers.Factory(

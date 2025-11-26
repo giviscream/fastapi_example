@@ -8,6 +8,7 @@ from services.security import SecurityService
 from repositories.users_repository import UsersRepository
 from schemas.token.response import Token
 from models.user import User
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class AuthService:
@@ -16,10 +17,17 @@ class AuthService:
         users_repository: UsersRepository,
         security_service: SecurityService,
         logger: Logger,
+        session: AsyncSession = None,
     ) -> None:
         self.users_repository = users_repository
         self.security_service = security_service
         self.logger = logger
+        self.session = session
+
+    def with_session(self, session: AsyncSession):
+        self.session = session
+        self.users_repository = self.users_repository.with_session(session=session)
+        return self
 
     async def _authenticate(self, username: str, password: str) -> User | None:
         user: User = await self.users_repository.get_by_username(username=username)
@@ -34,7 +42,6 @@ class AuthService:
             return None
         return user
 
-    @transactional(repository_attr="users_repository")
     async def create_user(self, user_create: CreateUser) -> UserResponse:
         password_hash = self.security_service.hash_password(
             password=user_create.password

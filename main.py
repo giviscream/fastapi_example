@@ -5,6 +5,7 @@ import uvicorn
 from api.v1 import todo_tasks, auth
 from core.containers import Container
 from middleware.auth_middleware import AuthMiddleware
+from middleware.db_session_middleware import DBSessionMiddleware
 
 container = Container()
 logger = container.logger()
@@ -19,14 +20,11 @@ async def lifespan(app: FastAPI):
 
 def create_app(lifespan=lifespan) -> FastAPI:
     container = Container()
-
-    # db = container.db()
-    # db.create_database()
-
     app = FastAPI(lifespan=lifespan)
     app.container = container
 
     app.add_middleware(AuthMiddleware)
+    app.add_middleware(DBSessionMiddleware)
 
     app.include_router(
         router=auth.router,
