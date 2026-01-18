@@ -2,7 +2,6 @@ from uuid import UUID
 
 from sqlalchemy import select
 from models.todo_task import ToDoTask
-from models.user import User
 from repositories.base import BaseRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 

@@ -2,7 +2,6 @@ from logging import Logger
 from uuid import UUID
 from schemas.user.request import CreateUser
 from schemas.user.response import UserResponse
-from services.base import transactional
 from services.security import SecurityService
 
 from repositories.users_repository import UsersRepository

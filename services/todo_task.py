@@ -64,7 +64,7 @@ class ToDoTaskService:
         return ToDoTaskResponse.model_validate(obj=todo_task)
 
     async def get_user_all_todo_tasks(
-        self, user_id: UUID, skip: int = 0, limit: int = 100
+        self, user_id: UUID, skip: int = 0, limit: int | None = 100
     ) -> List[ToDoTaskResponse]:
         todo_tasks: List[ToDoTask] = (
             await self.todo_tasks_repository.list_user_todo_tasks(

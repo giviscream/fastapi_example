@@ -1,6 +1,9 @@
+import io
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
+
+from fastapi.responses import StreamingResponse
 
 from core.containers import Container
 
@@ -8,9 +11,12 @@ from core.dependencies import get_current_user_id, get_db_session
 from database.ext import managed_db_session
 from schemas.todo_task.request import CreateToDoTask
 from schemas.todo_task.response import ToDoTaskResponse
+from services.todo_report_service import TodoReportService
 from services.todo_task import ToDoTaskService
 from dependency_injector.wiring import Provide, inject
 from sqlalchemy.ext.asyncio import AsyncSession
+
+import uuid
 
 router = APIRouter()
 
@@ -58,6 +64,7 @@ async def get_tasks(
 
 @router.get(path="/{todo_task_id}", response_model=ToDoTaskResponse)
 @inject
+@managed_db_session()
 async def get_todo_task(
     todo_task_id: UUID,
     todo_task_service: ToDoTaskService = Depends(
@@ -74,3 +81,42 @@ async def get_todo_task(
             status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
         )
     return todo_task
+
+
+@router.get("/export/excel")
+@inject
+@managed_db_session()
+async def export_todo_tasks(
+    todo_task_service: ToDoTaskService = Depends(
+        dependency=Provide[Container.todo_task_service]
+    ),
+    todo_report_service: TodoReportService = Depends(
+        dependency=Provide[Container.todo_report_service]
+    ),
+    current_user_id: UUID = Depends(get_current_user_id),
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    """
+    Экспорт todo задач пользователя в Excel файл
+    """
+    todo_tasks = await todo_task_service.with_session(
+            session=db_session
+        ).get_user_all_todo_tasks(skip=0, limit=None, user_id=current_user_id)
+
+    if not todo_tasks:
+        raise HTTPException(status_code=404, detail="У вас нет задач для экспорта")
+
+    # Создаем Excel файл
+    excel_buffer = todo_report_service.create_excel_buffer(
+        todos=todo_tasks,
+    )
+
+    # Формируем имя файла
+    filename = f"todos_{uuid.uuid4()}.xlsx"
+
+    # Возвращаем файл
+    return StreamingResponse(
+        content=io.BytesIO(initial_bytes=excel_buffer.read()),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
