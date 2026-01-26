@@ -20,4 +20,4 @@ class UsersRepository(BaseRepository[User]):
         result = await self.session.execute(
             select(User).where(User.username == username)
         )
-        return result.scalar_one_or_none()
+        return result.scalar_one()#todo добавить в middleware NOT_FOUND

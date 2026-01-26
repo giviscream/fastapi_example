@@ -34,14 +34,16 @@ async def get_current_user_info(
     response_model=UserResponse,
 )
 @inject
+@managed_db_session()
 async def register(
     user_create: CreateUser,
     auth_service: AuthService = Depends(Provide[Container.auth_service]),
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> UserResponse:
     """
     Регистрация нового пользователя (доступно без авторизации)
     """
-    return await auth_service.create_user(user_create=user_create)
+    return await auth_service.with_session(session=db_session).create_user(user_create=user_create)
 
 
 @router.post("/token", response_model=Token)

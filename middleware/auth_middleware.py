@@ -17,6 +17,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         "/api/v1/auth/login",
         "/api/v1/auth/token",
         "/api/v1/auth/register",
+        "/api/v1/auth/",
     ]
 
     @inject

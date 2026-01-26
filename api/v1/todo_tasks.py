@@ -45,12 +45,12 @@ async def create_todo_task(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get(path="/", response_model=List[ToDoTaskResponse])
+@router.get(path="/", response_model=List[ToDoTaskResponse]) #todo: add params date from, date to, sorting, states
 @inject
 @managed_db_session()
 async def get_tasks(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 100, #todo: filters: move params to separate class
     todo_task_service: ToDoTaskService = Depends(
         dependency=Provide[Container.todo_task_service]
     ),
@@ -76,7 +76,7 @@ async def get_todo_task(
     todo_task: ToDoTaskResponse = await todo_task_service.with_session(
         session=db_session
     ).get_user_todo_task(task_id=todo_task_id, user_id=current_user_id)
-    if not todo_task:
+    if not todo_task:#todo: remove
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
         )
@@ -94,7 +94,7 @@ async def export_todo_tasks(
         dependency=Provide[Container.todo_report_service]
     ),
     current_user_id: UUID = Depends(get_current_user_id),
-    db_session: AsyncSession = Depends(get_db_session),
+    db_session: AsyncSession = Depends(get_db_session), #todo: add params date from, date to, sorting, states
 ):
     """
     Экспорт todo задач пользователя в Excel файл
@@ -104,7 +104,7 @@ async def export_todo_tasks(
         ).get_user_all_todo_tasks(skip=0, limit=None, user_id=current_user_id)
 
     if not todo_tasks:
-        raise HTTPException(status_code=404, detail="У вас нет задач для экспорта")
+        raise HTTPException(status_code=404, detail="У вас нет задач для экспорта") #todo: remove
 
     # Создаем Excel файл
     excel_buffer = todo_report_service.create_excel_buffer(
@@ -112,7 +112,7 @@ async def export_todo_tasks(
     )
 
     # Формируем имя файла
-    filename = f"todos_{uuid.uuid4()}.xlsx"
+    filename = f"todos_{uuid.uuid4()}.xlsx" #todo: replace to user+time
 
     # Возвращаем файл
     return StreamingResponse(

@@ -29,10 +29,10 @@ class AuthService:
         return self
 
     async def _authenticate(self, username: str, password: str) -> User | None:
-        user: User = await self.users_repository.get_by_username(username=username)
-        if not user:
+        user: User = await self.users_repository.get_by_username(username=username) #change to get_by_kwargs
+        if not user: # remove
             return None
-        if user.disabled:
+        if user.disabled:# remove
             return None
         if not self.security_service.verify_password(
             plain_password=password,
