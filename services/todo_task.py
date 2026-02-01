@@ -40,36 +40,32 @@ class ToDoTaskService:
 
     async def get_todo_task(self, task_id: int) -> ToDoTaskResponse:
         todo_task: ToDoTask = await self.todo_tasks_repository.get_by_id(id=task_id)
-        if not todo_task:
-            return None
         return ToDoTaskResponse.model_validate(obj=todo_task)
 
     async def get_all_todo_tasks(
-        self, skip: int = 0, limit: int = 100
+        self, offset: int | None, limit: int | None
     ) -> List[ToDoTaskResponse]:
         todo_tasks: List[ToDoTask] = await self.todo_tasks_repository.list(
-            skip=skip, limit=limit
+            offset=offset, limit=limit
         )
         return [
             ToDoTaskResponse.model_validate(obj=todo_task) for todo_task in todo_tasks
         ]
 
     async def get_user_todo_task(self, user_id: UUID, task_id: int) -> ToDoTaskResponse:
-        todo_task: ToDoTask = await self.todo_tasks_repository.get_user_todo_task(
-            todo_task_id=task_id,
+        todo_task: ToDoTask = await self.todo_tasks_repository.get_one(
+            id=task_id,
             responsible_id=user_id,
         )
-        if not todo_task:
-            return None
         return ToDoTaskResponse.model_validate(obj=todo_task)
 
     async def get_user_all_todo_tasks(
-        self, user_id: UUID, skip: int = 0, limit: int | None = 100 #todo: move magic number to resources
+        self, user_id: UUID, offset: int | None, limit: int | None
     ) -> List[ToDoTaskResponse]:
-        todo_tasks: List[ToDoTask] = (
-            await self.todo_tasks_repository.list_user_todo_tasks(
-                skip=skip, limit=limit, responsible_id=user_id #todo: rename skip to offset
-            )
+        todo_tasks: List[ToDoTask] = await self.todo_tasks_repository.list(
+            offset=offset,
+            limit=limit,
+            responsible_id=user_id,
         )
         return [
             ToDoTaskResponse.model_validate(obj=todo_task) for todo_task in todo_tasks

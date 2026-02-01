@@ -29,11 +29,10 @@ class AuthService:
         return self
 
     async def _authenticate(self, username: str, password: str) -> User | None:
-        user: User = await self.users_repository.get_by_username(username=username) #change to get_by_kwargs
-        if not user: # remove
-            return None
-        if user.disabled:# remove
-            return None
+        user: User = await self.users_repository.get_one(
+            username=username, disabled=False
+        )
+
         if not self.security_service.verify_password(
             plain_password=password,
             hashed_password=user.password_hash,
@@ -81,8 +80,6 @@ class AuthService:
             raise "Cannot verify user"  # todo: сделать выделенные исключения
 
         user: User | None = await self.users_repository.get_by_id(id=user_id)
-        if user is None:
-            raise "User is not found"
 
         if user.disabled:
             raise "User is disabled"

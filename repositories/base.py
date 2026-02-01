@@ -26,12 +26,24 @@ class BaseRepository(Generic[ModelType]):
         result = await self.session.execute(
             select(self.model).where(self.model.id == id)
         )
-        return result.scalar_one_or_none()
+        return result.scalar_one()
 
-    async def list(self, skip: int = 0, limit: int = 100) -> list[ModelType]:
-        result = await self.session.execute(
-            select(self.model).offset(skip).limit(limit)
-        )
+    async def get_one(self, **kwargs) -> Optional[ModelType]:
+        result = await self.session.execute(select(self.model).filter_by(**kwargs))
+        return result.scalar_one()
+
+    async def list(
+        self,
+        offset: int = 0,
+        limit: int = 100,
+        **filters,
+    ) -> list[ModelType]:
+        stmt = select(self.model).offset(offset).limit(limit)
+
+        if filters:
+            stmt = stmt.filter_by(**filters)
+
+        result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
     async def create(self, **instance_data) -> ModelType:
