@@ -60,6 +60,7 @@ class Container(containers.DeclarativeContainer):
     todo_task_service = providers.Factory(
         provides=ToDoTaskService,
         todo_tasks_repository=todo_tasks_repository,
+        session=providers.Dependency(),
         logger=logger,
     )
     todo_report_service = providers.Factory(

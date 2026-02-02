@@ -1,3 +1,4 @@
+from typing import Callable
 from uuid import UUID
 from fastapi import Depends, Request, HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -25,7 +26,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         self,
         request: Request,
         call_next,
-        auth_service: AuthService = Depends(Provide[Container.auth_service]),
+        auth_service: Callable[..., AuthService] = Depends(
+            Provide[Container.auth_service.provider]
+        ),
     ):
 
         if request.url.path in self.PUBLIC_PATHS:
@@ -55,7 +58,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             )
 
         # Валидация токена
-        user_id: UUID = await auth_service.with_session(
+        user_id: UUID = await auth_service(
             session=request.state.db_session
         ).get_current_user_id(token=token)
 

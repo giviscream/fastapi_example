@@ -1,3 +1,4 @@
+from typing import Callable
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -22,11 +23,11 @@ router = APIRouter()
 @inject
 @managed_db_session()
 async def get_current_user_info(
-    auth_service: AuthService = Depends(Provide[Container.auth_service]),
+    auth_service: Callable[..., AuthService] = Depends(Provide[Container.auth_service.provider]),
     current_user_id: UUID = Depends(get_current_user_id),
     db_session: AsyncSession = Depends(get_db_session),
 ) -> UserResponse:
-    return await auth_service.with_session(session=db_session).get_user_by_id(user_id=current_user_id)
+    return await auth_service(session=db_session).get_user_by_id(user_id=current_user_id)
 
 
 @router.post(
@@ -37,20 +38,20 @@ async def get_current_user_info(
 @managed_db_session()
 async def register(
     user_create: CreateUser,
-    auth_service: AuthService = Depends(Provide[Container.auth_service]),
+    auth_service: Callable[..., AuthService] = Depends(Provide[Container.auth_service.provider]),
     db_session: AsyncSession = Depends(get_db_session),
 ) -> UserResponse:
     """
     Регистрация нового пользователя (доступно без авторизации)
     """
-    return await auth_service.with_session(session=db_session).create_user(user_create=user_create)
+    return await auth_service(session=db_session).create_user(user_create=user_create)
 
 
 @router.post("/token", response_model=Token)
 @inject
 @managed_db_session()
 async def login(
-    auth_service: AuthService = Depends(Provide[Container.auth_service]),
+    auth_service: Callable[..., AuthService] = Depends(Provide[Container.auth_service.provider]),
     form_data: OAuth2PasswordRequestForm = Depends(),
     db_session: AsyncSession = Depends(get_db_session),
 ):
@@ -65,7 +66,7 @@ async def login(
     Возвращает JWT access token
     """
     try:
-        token = await auth_service.with_session(session=db_session).login(
+        token = await auth_service(session=db_session).login(
             username=form_data.username, password=form_data.password
         )
         return token

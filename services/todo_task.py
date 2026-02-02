@@ -14,23 +14,24 @@ class ToDoTaskService:
         self,
         logger: Logger,
         todo_tasks_repository: ToDoTaskRepository,
-        session: AsyncSession = None,
+        session: AsyncSession,
     ):
         self.todo_tasks_repository = todo_tasks_repository
         self.logger = logger
         self.session = session
 
-    def with_session(self, session: AsyncSession):
-        self.session = session
-        self.todo_tasks_repository = self.todo_tasks_repository.with_session(
-            session=session
-        )
-        return self
+    # def with_session(self, session: AsyncSession):
+    #     self.session = session
+    #     self.todo_tasks_repository = self.todo_tasks_repository.with_session(
+    #         session=session
+    #     )
+    #     return self
 
     async def create_todo_task(
         self, responsible_id: int, todo_task_create: CreateToDoTask
     ) -> ToDoTaskResponse:
         new_todo_task: ToDoTask = await self.todo_tasks_repository.create(
+            session=self.session,
             title=todo_task_create.title,
             description=todo_task_create.description,
             responsible_id=responsible_id,
@@ -46,7 +47,7 @@ class ToDoTaskService:
         self, offset: int | None, limit: int | None
     ) -> List[ToDoTaskResponse]:
         todo_tasks: List[ToDoTask] = await self.todo_tasks_repository.list(
-            offset=offset, limit=limit
+            session=self.session, offset=offset, limit=limit
         )
         return [
             ToDoTaskResponse.model_validate(obj=todo_task) for todo_task in todo_tasks
@@ -54,6 +55,7 @@ class ToDoTaskService:
 
     async def get_user_todo_task(self, user_id: UUID, task_id: int) -> ToDoTaskResponse:
         todo_task: ToDoTask = await self.todo_tasks_repository.get_one(
+            session=self.session,
             id=task_id,
             responsible_id=user_id,
         )
@@ -63,6 +65,7 @@ class ToDoTaskService:
         self, user_id: UUID, offset: int | None, limit: int | None
     ) -> List[ToDoTaskResponse]:
         todo_tasks: List[ToDoTask] = await self.todo_tasks_repository.list(
+            session=self.session,
             offset=offset,
             limit=limit,
             responsible_id=user_id,

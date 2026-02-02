@@ -16,21 +16,16 @@ class AuthService:
         users_repository: UsersRepository,
         security_service: SecurityService,
         logger: Logger,
-        session: AsyncSession = None,
+        session: AsyncSession,
     ) -> None:
         self.users_repository = users_repository
         self.security_service = security_service
         self.logger = logger
         self.session = session
 
-    def with_session(self, session: AsyncSession):
-        self.session = session
-        self.users_repository = self.users_repository.with_session(session=session)
-        return self
-
     async def _authenticate(self, username: str, password: str) -> User | None:
         user: User = await self.users_repository.get_one(
-            username=username, disabled=False
+            session=self.session, username=username, disabled=False
         )
 
         if not self.security_service.verify_password(
@@ -45,6 +40,7 @@ class AuthService:
             password=user_create.password
         )
         new_user: User = await self.users_repository.create(
+            session=self.session,
             email=user_create.email,
             username=user_create.username,
             full_name=user_create.full_name,
@@ -79,7 +75,9 @@ class AuthService:
         if not user_id:
             raise "Cannot verify user"  # todo: сделать выделенные исключения
 
-        user: User | None = await self.users_repository.get_by_id(id=user_id)
+        user: User | None = await self.users_repository.get_by_id(
+            session=self.session, id=user_id
+        )
 
         if user.disabled:
             raise "User is disabled"
@@ -91,5 +89,7 @@ class AuthService:
         return result.id if result else None
 
     async def get_user_by_id(self, user_id: UUID) -> UserResponse:
-        user: User = await self.users_repository.get_by_id(id=user_id)
+        user: User = await self.users_repository.get_by_id(
+            session=self.session, id=user_id
+        )
         return UserResponse.model_validate(user)

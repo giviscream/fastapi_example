@@ -1,7 +1,7 @@
 import io
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List
+from typing import Callable, List
 
 from fastapi.responses import StreamingResponse
 
@@ -30,12 +30,14 @@ router = APIRouter()
 @managed_db_session()
 async def create_todo_task(
     todo_task_create: CreateToDoTask,
-    todo_task_service: ToDoTaskService = Depends(Provide[Container.todo_task_service]),
+    todo_task_service: Callable[..., ToDoTaskService] = Depends(
+        dependency=Provide[Container.todo_task_service.provider]
+    ),
     current_user_id: UUID = Depends(get_current_user_id),
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ToDoTaskResponse:
     try:
-        return await todo_task_service.with_session(
+        return await todo_task_service(
             session=db_session
         ).create_todo_task(
             responsible_id=current_user_id,
@@ -50,18 +52,18 @@ async def create_todo_task(
 )  # todo: add params date from, date to, sorting, states
 @inject
 @managed_db_session()
-async def get_tasks(
+async def get_todo_tasks(
     offset: int = 0,
     limit: int = 100,  # todo: filters: move params to separate class
-    todo_task_service: ToDoTaskService = Depends(
-        dependency=Provide[Container.todo_task_service]
+    todo_task_service: Callable[..., ToDoTaskService] = Depends(
+        dependency=Provide[Container.todo_task_service.provider]
     ),
     current_user_id: UUID = Depends(get_current_user_id),
     db_session: AsyncSession = Depends(get_db_session),
 ) -> List[ToDoTaskResponse]:
-    return await todo_task_service.with_session(
-        session=db_session
-    ).get_user_all_todo_tasks(offset=offset, limit=limit, user_id=current_user_id)
+    return await todo_task_service(session=db_session).get_user_all_todo_tasks(
+        offset=offset, limit=limit, user_id=current_user_id
+    )
 
 
 @router.get(path="/{todo_task_id}", response_model=ToDoTaskResponse)
@@ -69,25 +71,23 @@ async def get_tasks(
 @managed_db_session()
 async def get_todo_task(
     todo_task_id: UUID,
-    todo_task_service: ToDoTaskService = Depends(
-        dependency=Provide[Container.todo_task_service]
+    todo_task_service: Callable[..., ToDoTaskService] = Depends(
+        dependency=Provide[Container.todo_task_service.provider]
     ),
-    current_user_id: UUID = Depends(get_current_user_id),
     db_session: AsyncSession = Depends(get_db_session),
+    current_user_id: UUID = Depends(get_current_user_id),
 ) -> ToDoTaskResponse:
-    todo_task: ToDoTaskResponse = await todo_task_service.with_session(
-        session=db_session
-    ).get_user_todo_task(task_id=todo_task_id, user_id=current_user_id)
-
-    return todo_task
+    return await todo_task_service(session=db_session).get_user_todo_task(
+        task_id=todo_task_id, user_id=current_user_id
+    )
 
 
 @router.get("/export/excel")
 @inject
 @managed_db_session()
 async def export_todo_tasks(
-    todo_task_service: ToDoTaskService = Depends(
-        dependency=Provide[Container.todo_task_service]
+    todo_task_service: Callable[..., ToDoTaskService] = Depends(
+        dependency=Provide[Container.todo_task_service.provider]
     ),
     todo_report_service: TodoReportService = Depends(
         dependency=Provide[Container.todo_report_service]
@@ -100,7 +100,7 @@ async def export_todo_tasks(
     """
     Экспорт todo задач пользователя в Excel файл
     """
-    todo_tasks = await todo_task_service.with_session(
+    todo_tasks = await todo_task_service(
         session=db_session
     ).get_user_all_todo_tasks(offset=0, limit=None, user_id=current_user_id)
 
