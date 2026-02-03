@@ -36,15 +36,10 @@ async def create_todo_task(
     current_user_id: UUID = Depends(get_current_user_id),
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ToDoTaskResponse:
-    try:
-        return await todo_task_service(
-            session=db_session
-        ).create_todo_task(
-            responsible_id=current_user_id,
-            todo_task_create=todo_task_create,
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return await todo_task_service(session=db_session).create_todo_task(
+        responsible_id=current_user_id,
+        todo_task_create=todo_task_create,
+    )
 
 
 @router.get(
@@ -100,9 +95,9 @@ async def export_todo_tasks(
     """
     Экспорт todo задач пользователя в Excel файл
     """
-    todo_tasks = await todo_task_service(
-        session=db_session
-    ).get_user_all_todo_tasks(offset=0, limit=None, user_id=current_user_id)
+    todo_tasks = await todo_task_service(session=db_session).get_user_all_todo_tasks(
+        offset=0, limit=None, user_id=current_user_id
+    )
 
     # Создаем Excel файл
     excel_buffer = todo_report_service.create_excel_buffer(

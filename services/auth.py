@@ -1,5 +1,6 @@
 from logging import Logger
 from uuid import UUID
+from exceptions import UnauthorizedException, InvalidTokenException
 from schemas.user.request import CreateUser
 from schemas.user.response import UserResponse
 from services.security import SecurityService
@@ -23,7 +24,7 @@ class AuthService:
         self.logger = logger
         self.session = session
 
-    async def _authenticate(self, username: str, password: str) -> User | None:
+    async def _authenticate(self, username: str, password: str) -> User:
         user: User = await self.users_repository.get_one(
             session=self.session, username=username, disabled=False
         )
@@ -32,7 +33,7 @@ class AuthService:
             plain_password=password,
             hashed_password=user.password_hash,
         ):
-            return None
+            raise UnauthorizedException(message="Incorrect username or password")
         return user
 
     async def create_user(self, user_create: CreateUser) -> UserResponse:
@@ -54,11 +55,7 @@ class AuthService:
         """
         Вход пользователя и создание JWT токена
         """
-        user: User | None = await self._authenticate(
-            username=username, password=password
-        )
-        if not user:
-            raise ValueError("Incorrect username or password")
+        user: User = await self._authenticate(username=username, password=password)
 
         access_token = self.security_service.create_access_token(
             data={
@@ -69,24 +66,23 @@ class AuthService:
         return Token(access_token=access_token, token_type="bearer")
 
     async def get_current_user(self, token: str) -> UserResponse:
-        """Получение текущего пользователя из токена"""
+        """
+        Получение текущего пользователя из токена
+        """
         payload: dict = self.security_service.decode_access_token(token=token)
         user_id: UUID = payload.get("user_id")
         if not user_id:
-            raise "Cannot verify user"  # todo: сделать выделенные исключения
+            raise InvalidTokenException()
 
-        user: User | None = await self.users_repository.get_by_id(
-            session=self.session, id=user_id
+        user: User = await self.users_repository.get_by_id(
+            session=self.session, id=user_id, disabled=False
         )
-
-        if user.disabled:
-            raise "User is disabled"
 
         return UserResponse.model_validate(user)
 
     async def get_current_user_id(self, token: str) -> UUID:
         result: UserResponse = await self.get_current_user(token=token)
-        return result.id if result else None
+        return result.id
 
     async def get_user_by_id(self, user_id: UUID) -> UserResponse:
         user: User = await self.users_repository.get_by_id(

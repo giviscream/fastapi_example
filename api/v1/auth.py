@@ -1,6 +1,6 @@
 from typing import Callable
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from core.containers import Container
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,11 +23,15 @@ router = APIRouter()
 @inject
 @managed_db_session()
 async def get_current_user_info(
-    auth_service: Callable[..., AuthService] = Depends(Provide[Container.auth_service.provider]),
+    auth_service: Callable[..., AuthService] = Depends(
+        Provide[Container.auth_service.provider]
+    ),
     current_user_id: UUID = Depends(get_current_user_id),
     db_session: AsyncSession = Depends(get_db_session),
 ) -> UserResponse:
-    return await auth_service(session=db_session).get_user_by_id(user_id=current_user_id)
+    return await auth_service(session=db_session).get_user_by_id(
+        user_id=current_user_id
+    )
 
 
 @router.post(
@@ -38,7 +42,9 @@ async def get_current_user_info(
 @managed_db_session()
 async def register(
     user_create: CreateUser,
-    auth_service: Callable[..., AuthService] = Depends(Provide[Container.auth_service.provider]),
+    auth_service: Callable[..., AuthService] = Depends(
+        Provide[Container.auth_service.provider]
+    ),
     db_session: AsyncSession = Depends(get_db_session),
 ) -> UserResponse:
     """
@@ -51,10 +57,12 @@ async def register(
 @inject
 @managed_db_session()
 async def login(
-    auth_service: Callable[..., AuthService] = Depends(Provide[Container.auth_service.provider]),
+    auth_service: Callable[..., AuthService] = Depends(
+        Provide[Container.auth_service.provider]
+    ),
     form_data: OAuth2PasswordRequestForm = Depends(),
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> Token:
     """
     OAuth2 совместимый endpoint для получения токена.
     Этот endpoint используется кнопкой "Authorize" в Swagger UI.
@@ -65,14 +73,6 @@ async def login(
 
     Возвращает JWT access token
     """
-    try:
-        token = await auth_service(session=db_session).login(
-            username=form_data.username, password=form_data.password
-        )
-        return token
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    return await auth_service(session=db_session).login(
+        username=form_data.username, password=form_data.password
+    )

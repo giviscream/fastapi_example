@@ -1,6 +1,8 @@
-from fastapi import Depends, Request, HTTPException, status
+from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import UUID
+
+from exceptions.unauthorized import UnauthorizedException
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
@@ -10,10 +12,7 @@ def get_current_user_id(
 ) -> UUID:
     """Dependency для получения текущего пользователя"""
     if not hasattr(request.state, "user_id"):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated"
-        )
+        raise UnauthorizedException()
     return request.state.user_id
 
 def get_db_session(

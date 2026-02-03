@@ -2,6 +2,8 @@ from datetime import datetime, timedelta, timezone
 import bcrypt
 from jose import JWTError, jwt
 
+from exceptions.invalid_token import InvalidTokenException
+
 
 class SecurityService:
     def __init__(
@@ -66,4 +68,4 @@ class SecurityService:
             )
             return payload
         except JWTError:
-            return None
+            raise InvalidTokenException()

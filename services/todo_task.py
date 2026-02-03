@@ -20,13 +20,6 @@ class ToDoTaskService:
         self.logger = logger
         self.session = session
 
-    # def with_session(self, session: AsyncSession):
-    #     self.session = session
-    #     self.todo_tasks_repository = self.todo_tasks_repository.with_session(
-    #         session=session
-    #     )
-    #     return self
-
     async def create_todo_task(
         self, responsible_id: int, todo_task_create: CreateToDoTask
     ) -> ToDoTaskResponse:
