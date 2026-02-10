@@ -74,7 +74,7 @@ class AuthService:
         if not user_id:
             raise InvalidTokenException()
 
-        user: User = await self.users_repository.get_by_id(
+        user: User = await self.users_repository.get_one(
             session=self.session, id=user_id, disabled=False
         )
 

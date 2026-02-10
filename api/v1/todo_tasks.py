@@ -1,6 +1,6 @@
-import io
+#import io
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from typing import Callable, List
 
 from fastapi.responses import StreamingResponse
@@ -95,21 +95,15 @@ async def export_todo_tasks(
     """
     Экспорт todo задач пользователя в Excel файл
     """
-    todo_tasks = await todo_task_service(session=db_session).get_user_all_todo_tasks(
+    todo_tasks: List[ToDoTaskResponse] = await todo_task_service(session=db_session).get_user_all_todo_tasks(
         offset=0, limit=None, user_id=current_user_id
     )
 
-    # Создаем Excel файл
-    excel_buffer = todo_report_service.create_excel_buffer(
-        todos=todo_tasks,
-    )
-
     # Формируем имя файла
-    filename = f"todos_{uuid.uuid4()}.xlsx"  # todo: replace to user+time
+    filename = f"todos_{uuid.uuid4()}.xlsx"
 
-    # Возвращаем файл
     return StreamingResponse(
-        content=io.BytesIO(initial_bytes=excel_buffer.read()),
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
-    )
+            content=todo_report_service.get_report_chunks(todos=todo_tasks),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
