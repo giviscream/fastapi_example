@@ -1,7 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
-from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 Base = declarative_base()
 
@@ -24,16 +22,3 @@ class Database:
     async def init_db(self) -> None:
         async with self._engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-
-    @asynccontextmanager
-    async def del_get_db_session(self) -> AsyncGenerator[AsyncSession, None]:
-        session: AsyncSession = self.session_factory()
-        try:
-            yield session
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
-
-    
