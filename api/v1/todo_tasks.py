@@ -1,14 +1,16 @@
-#import io
+# import io
 from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from typing import Callable, List
 
 from fastapi.responses import StreamingResponse
 
+from api.v1.filters import get_todo_task_list_params
 from core.containers import Container
 
 from core.dependencies import get_current_user_id, get_db_session
 from database.ext import managed_db_session
+from schemas.todo_task.query_params import ToDoTaskListParams
 from schemas.todo_task.request import CreateToDoTask
 from schemas.todo_task.response import ToDoTaskResponse
 from services.todo_report import TodoReportService
@@ -42,14 +44,11 @@ async def create_todo_task(
     )
 
 
-@router.get(
-    path="/", response_model=List[ToDoTaskResponse]
-)  # todo: add params date from, date to, sorting, states
+@router.get(path="/", response_model=List[ToDoTaskResponse])
 @inject
 @managed_db_session()
 async def get_todo_tasks(
-    offset: int = 0,
-    limit: int = 100,  # todo: filters: move params to separate class
+    list_params: ToDoTaskListParams = Depends(get_todo_task_list_params),
     todo_task_service: Callable[..., ToDoTaskService] = Depends(
         dependency=Provide[Container.todo_task_service.provider]
     ),
@@ -57,7 +56,8 @@ async def get_todo_tasks(
     db_session: AsyncSession = Depends(get_db_session),
 ) -> List[ToDoTaskResponse]:
     return await todo_task_service(session=db_session).get_user_all_todo_tasks(
-        offset=offset, limit=limit, user_id=current_user_id
+        user_id=current_user_id,
+        list_params=list_params,
     )
 
 
@@ -95,15 +95,15 @@ async def export_todo_tasks(
     """
     Экспорт todo задач пользователя в Excel файл
     """
-    todo_tasks: List[ToDoTaskResponse] = await todo_task_service(session=db_session).get_user_all_todo_tasks(
-        offset=0, limit=None, user_id=current_user_id
-    )
+    todo_tasks: List[ToDoTaskResponse] = await todo_task_service(
+        session=db_session
+    ).get_user_all_todo_tasks(offset=0, limit=None, user_id=current_user_id)
 
     # Формируем имя файла
     filename = f"todos_{uuid.uuid4()}.xlsx"
 
     return StreamingResponse(
-            content=todo_report_service.get_report_chunks(todos=todo_tasks),
-            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": f"attachment; filename={filename}"},
-        )
+        content=todo_report_service.get_report_chunks(todos=todo_tasks),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )

@@ -27,7 +27,7 @@ def managed_db_session():
             except Exception as exc:
                 logger.warning('Exception caught. Roll DB changes back.: %s', exc)
                 await db_session.rollback()
-                raise
+                raise exc
             finally:
                 await db_session.close()
         return wrapper

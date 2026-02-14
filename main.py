@@ -26,7 +26,7 @@ def create_app(lifespan=lifespan) -> FastAPI:
 
     app.add_middleware(AuthMiddleware)
     app.add_middleware(DBSessionMiddleware)
-    app.add_middleware(ErrorHandlingMiddleware, expose_internal_errors=False)
+    app.add_middleware(ErrorHandlingMiddleware, expose_internal_errors=True)
 
     app.include_router(
         router=auth.router,
