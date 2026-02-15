@@ -5,11 +5,12 @@ from typing import Callable, List
 
 from fastapi.responses import StreamingResponse
 
-from api.v1.filters import get_todo_task_list_params
+from api.v1.filters import get_dt_range_filter, get_todo_task_list_params
 from core.containers import Container
 
 from core.dependencies import get_current_user_id, get_db_session
 from database.ext import managed_db_session
+from schemas.query_params.query_params import DateRangeFilter
 from schemas.todo_task.query_params import ToDoTaskListParams
 from schemas.todo_task.request import CreateToDoTask
 from schemas.todo_task.response import ToDoTaskResponse
@@ -81,6 +82,7 @@ async def get_todo_task(
 @inject
 @managed_db_session()
 async def export_todo_tasks(
+    tasks_range: DateRangeFilter = Depends(get_dt_range_filter),
     todo_task_service: Callable[..., ToDoTaskService] = Depends(
         dependency=Provide[Container.todo_task_service.provider]
     ),
@@ -88,16 +90,17 @@ async def export_todo_tasks(
         dependency=Provide[Container.todo_report_service]
     ),
     current_user_id: UUID = Depends(get_current_user_id),
-    db_session: AsyncSession = Depends(
-        get_db_session
-    ),  # todo: add params date from, date to, sorting, states
-):
+    db_session: AsyncSession = Depends(get_db_session),
+) -> StreamingResponse:
     """
     Экспорт todo задач пользователя в Excel файл
     """
     todo_tasks: List[ToDoTaskResponse] = await todo_task_service(
         session=db_session
-    ).get_user_all_todo_tasks(offset=0, limit=None, user_id=current_user_id)
+    ).get_user_all_todo_tasks(
+        user_id=current_user_id,
+        list_params=ToDoTaskListParams(dt_range_filter=tasks_range),
+    )
 
     # Формируем имя файла
     filename = f"todos_{uuid.uuid4()}.xlsx"
