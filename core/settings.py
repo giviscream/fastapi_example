@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     )
 
     LOGS_LEVEL: str
+    DEBUG: bool
 
     SECRET_KEY: str
     ALGORITHM: str

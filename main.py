@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from api.v1 import todo_tasks, auth
+from core.settings import settings
 from core.containers import Container
 from middleware.auth_middleware import AuthMiddleware
 from middleware.db_session_middleware import DBSessionMiddleware
@@ -26,7 +27,7 @@ def create_app(lifespan=lifespan) -> FastAPI:
 
     app.add_middleware(AuthMiddleware)
     app.add_middleware(DBSessionMiddleware)
-    app.add_middleware(ErrorHandlingMiddleware, expose_internal_errors=True)
+    app.add_middleware(ErrorHandlingMiddleware, expose_internal_errors=settings.DEBUG)
 
     app.include_router(
         router=auth.router,

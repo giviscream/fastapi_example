@@ -4,7 +4,7 @@ from fastapi import Depends, Request, HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from dependency_injector.wiring import inject, Provide
 from core.containers import Container
-from exceptions.unauthorized import UnauthorizedException
+from exceptions.custom_exceptions.unauthorized import UnauthorizedException
 from services.auth import AuthService
 
 

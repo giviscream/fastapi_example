@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 import bcrypt
 from jose import JWTError, jwt
 
-from exceptions.invalid_token import InvalidTokenException
+from exceptions.custom_exceptions.invalid_token import InvalidTokenException
 
 
 class SecurityService:

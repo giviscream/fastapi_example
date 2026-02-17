@@ -2,7 +2,7 @@ from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import UUID
 
-from exceptions.unauthorized import UnauthorizedException
+from exceptions.custom_exceptions.unauthorized import UnauthorizedException
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
