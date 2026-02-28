@@ -2,6 +2,8 @@ from datetime import datetime
 from fastapi import Depends, Query
 from typing import Annotated
 from pydantic import AfterValidator
+from resources.constants import DATETIME_FMT, LIMIT_FROM_DEFAULT, LIMIT_TO_DEFAULT, OFFSET_FROM_DEFAULT
+from resources.regex import HTTP_QUERY_DT_PATTERN
 
 
 from schemas.query_params.query_params import (
@@ -12,24 +14,23 @@ from schemas.query_params.query_params import (
 )
 from schemas.todo_task.query_params import ToDoTaskListParams
 
-DATETIME_FMT = "%Y-%m-%dT%H:%M:%S"
 
 
-def parse_strict_datetime(v: str | None) -> datetime | None:
-    if v is None:
+
+def parse_strict_datetime(datetime_str: str | None) -> datetime | None:
+    if datetime_str is None:
         return None
-    try:
-        return datetime.strptime(v, DATETIME_FMT)
-    except ValueError:
-        raise ValueError("Invalid datetime format. Expected YYYY-MM-DDTHH:MM:SS")
+    return datetime.strptime(datetime_str, DATETIME_FMT)
 
 
 StrictDateTimeQuery = Annotated[
     str | None,
     Query(
-        description="Формат: YYYY-MM-DDTHH:MM:SS",
-        examples=["2026-02-14T12:30:00"],
-        pattern=r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$",
+        description=(
+            "Формат: YYYY-MM-DDTHH:MM:SS\n"
+            "Пример: 2026-02-14T12:30:00"
+        ),
+        pattern=HTTP_QUERY_DT_PATTERN,
     ),
     AfterValidator(parse_strict_datetime),
 ]
@@ -43,8 +44,8 @@ def get_todo_task_filter(
 
 
 def get_pagination_params(
-    offset: int = Query(default=None, ge=0, description="Смещение"),
-    limit: int = Query(default=None, ge=1, le=1000, description="Лимит"),
+    offset: int = Query(default=None, ge=OFFSET_FROM_DEFAULT, description="Смещение"),
+    limit: int = Query(default=None, ge=LIMIT_FROM_DEFAULT, le=LIMIT_TO_DEFAULT, description="Лимит"),
 ) -> PaginationParams:
     return PaginationParams(offset=offset, limit=limit)
 
@@ -57,8 +58,8 @@ def get_sorting_params(
 
 
 def get_dt_range_filter(
-    date_from: StrictDateTimeQuery = None,
-    date_to: StrictDateTimeQuery = None,
+    date_from: Annotated[datetime, Query()],
+    date_to: Annotated[datetime, Query()],
 ) -> DateRangeFilter:
     return DateRangeFilter(date_from=date_from, date_to=date_to)
 

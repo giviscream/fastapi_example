@@ -1,4 +1,3 @@
-# import io
 from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from typing import Callable, List
@@ -10,6 +9,12 @@ from core.containers import Container
 
 from core.dependencies import get_current_user_id, get_db_session
 from database.ext import managed_db_session
+from resources.constants import (
+    CONTENT_DISPOSITION_HEADER,
+    CONTENT_DISPOSITION_TEMPLATE,
+    FILENAME_TEMPLATE,
+    REPORT_EXPORT_MEDIA_TYPE,
+)
 from schemas.query_params.query_params import DateRangeFilter
 from schemas.todo_task.query_params import ToDoTaskListParams
 from schemas.todo_task.request import CreateToDoTask
@@ -102,11 +107,14 @@ async def export_todo_tasks(
         list_params=ToDoTaskListParams(dt_range_filter=tasks_range),
     )
 
-    # Формируем имя файла
-    filename = f"todos_{uuid.uuid4()}.xlsx"
+    filename = FILENAME_TEMPLATE.format(id=uuid.uuid4())
 
     return StreamingResponse(
         content=todo_report_service.get_report_chunks(todos=todo_tasks),
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        media_type=REPORT_EXPORT_MEDIA_TYPE,
+        headers={
+            CONTENT_DISPOSITION_HEADER: CONTENT_DISPOSITION_TEMPLATE.format(
+                filename=filename
+            )
+        },
     )

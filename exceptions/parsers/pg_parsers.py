@@ -6,37 +6,36 @@ import asyncpg
 from fastapi import status
 
 from exceptions.custom_exceptions.pg_error_result import PgErrorResult
+from resources.regex import (
+    FK_DETAIL_PATTERN,
+    NOT_FOUND_DETAIL_PATTERN,
+    NOT_NULL_PATTERN,
+    UNIQUE_DETAIL_PATTERN,
+)
 
 
 class PgDetailRegex(Enum):
     UNIQUE_DETAIL = re.compile(
-        r"Key\s+\((?P<columns>[^)]+)\)=\((?P<values>[^)]+)\)\s+already exists",
-        re.IGNORECASE,
+        pattern=UNIQUE_DETAIL_PATTERN,
+        flags=re.IGNORECASE,
     )
     FK_DETAIL = re.compile(
-        r"Key\s+\((?P<columns>[^)]+)\)=\((?P<values>[^)]+)\)\s+"
-        r"is not present in table\s+\"(?P<table>[^\"]+)\"",
-        re.IGNORECASE,
+        pattern=FK_DETAIL_PATTERN,
+        flags=re.IGNORECASE,
     )
     NOT_NULL = re.compile(
-        r"null value in column\s+\"(?P<column>[^\"]+)\"\s+"
-        r"(?:of relation\s+\"(?P<relation>[^\"]+)\"\s+)?"
-        r"violates not-null constraint",
-        re.IGNORECASE,
+        pattern=NOT_NULL_PATTERN,
+        flags=re.IGNORECASE,
     )
     NOT_FOUND_DETAIL = re.compile(
-        r"Key\s+\((?P<columns>[^)]+)\)=\((?P<values>[^)]+)\)\s+is not present in table\s+\"(?P<table>[^\"]+)\"",
-        re.IGNORECASE,
+        pattern=NOT_FOUND_DETAIL_PATTERN,
+        flags=re.IGNORECASE,
     )
 
 
 def extract_pg_details(
     err: BaseException,
 ) -> tuple[Optional[str], str, Optional[BaseException]]:
-    """
-    Извлекает constraint_name, detail-сообщение и оригинальное
-    asyncpg-исключение из SQLAlchemy IntegrityError.
-    """
     orig = getattr(err, "orig", None)
     if orig is None:
         return None, str(err), None
@@ -149,12 +148,13 @@ def _parse_check_violation(
         meta=meta,
     )
 
+
 def _parse_not_found(
     constraint: str | None,
     msg: str,
     orig: BaseException | None,
 ) -> PgErrorResult | None:
-    
+
     if "no row was found" not in msg.lower():
         return None
 
@@ -166,14 +166,12 @@ def _parse_not_found(
     )
 
 
-
-
 _PARSERS = (
     _parse_unique_violation,
     _parse_fk_violation,
     _parse_not_null_violation,
     _parse_check_violation,
-    _parse_not_found
+    _parse_not_found,
 )
 
 

@@ -33,7 +33,7 @@ class Container(containers.DeclarativeContainer):
         provides=Database,
         database_url=settings.async_database_url,
         echo=True,
-    )  # todo: пробрасывать его вместо сессий
+    )
 
     users_repository = providers.Factory(
         provides=UsersRepository,

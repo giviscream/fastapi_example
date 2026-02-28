@@ -1,6 +1,7 @@
 from logging import Logger
 from uuid import UUID
 from exceptions import UnauthorizedException, InvalidTokenException
+from resources.constants import TOKEN_TYPE
 from schemas.user.request import CreateUser
 from schemas.user.response import UserResponse
 from services.security import SecurityService
@@ -63,7 +64,7 @@ class AuthService:
             },
         )
 
-        return Token(access_token=access_token, token_type="bearer")
+        return Token(access_token=access_token, token_type=TOKEN_TYPE)
 
     async def get_current_user(self, token: str) -> UserResponse:
         """

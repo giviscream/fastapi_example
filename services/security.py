@@ -3,6 +3,7 @@ import bcrypt
 from jose import JWTError, jwt
 
 from exceptions.custom_exceptions.invalid_token import InvalidTokenException
+from resources.constants import TOKEN_ENCODING
 
 
 class SecurityService:
@@ -11,7 +12,7 @@ class SecurityService:
         access_token_expire_minutes: int,
         sign_algorithm: str,
         secret_key: str,
-        encoding: str = "utf-8",
+        encoding: str = TOKEN_ENCODING,
     ):
         self.access_token_expire_minutes = access_token_expire_minutes
         self.sign_algorithm = sign_algorithm
